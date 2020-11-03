@@ -11,7 +11,7 @@ import (
 
 type IEventBus interface {
 	Publish(event Event, topic string)
-	Subscribe(event Event, eventHandler EventHandler, topic string)
+	Subscribe(event Event, eventHandlers []*EventHandler, topic string)
 }
 
 type EventBus struct {
@@ -31,6 +31,7 @@ func (eventBus *EventBus) New() *EventBus {
 	}
 	return &EventBus{Subscriptions: make(map[reflect.Type][]interface{}), Conn: nc}
 }
+
 func (eventBus *EventBus) PublishAsync(event interface{}, topic string) {
 	data, err := json.Marshal(&event)
 	if err != nil {
