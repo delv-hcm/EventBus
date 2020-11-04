@@ -3,8 +3,6 @@ package EventHandlers
 import (
 	"encoding/json"
 	"eventbus/EventBus"
-	"log"
-	"runtime"
 	"time"
 )
 
@@ -23,8 +21,6 @@ func (handler *LeaveClassEventHandler) Handle(event []byte, errorResult chan<- E
 	if err != nil {
 		errorResult <- EventBus.ResultError{}
 	}
-	log.Println("in handler", runtime.NumGoroutine())
 	time.Sleep(time.Duration(1) * time.Second)
-	log.Println("isleave:", evt.IsLeave)
 	errorResult <- EventBus.ResultError{Err: nil}
 }

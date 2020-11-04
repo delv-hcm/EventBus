@@ -13,7 +13,7 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
-	eventBus := (&EventBus.EventBus{ClientId: "server-01"}).New()
+	eventBus := (&EventBus.EventBus{ClientId: "server-01"}).New(100)
 
 	// eventBus.Subscribe(&EventHandlers.RegisterEvent{}, []interface{}{
 	// 	&EventHandlers.RegisterEventHandler{},
@@ -25,7 +25,7 @@ func main() {
 		&EventHandlers.RegisterEvent2Handler{}}, "register-event-5", "queue-name",
 	)
 
-	eventBus.Subscribe(&EventHandlers.LeaveClassEvent{}, []interface{}{&EventHandlers.LeaveClassEventHandler{}}, "leave-class-event")
+	//eventBus.Subscribe(&EventHandlers.LeaveClassEvent{}, []interface{}{&EventHandlers.LeaveClassEventHandler{}}, "leave-class-event")
 
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {
