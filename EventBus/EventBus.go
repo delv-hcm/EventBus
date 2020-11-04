@@ -36,20 +36,6 @@ func (eventBus *EventBus) New(size int) *EventBus {
 		Rb: &RingBuffer{InChan: make(chan ResultError), OutChan: make(chan ResultError, size)}}
 }
 
-func (eventBus *EventBus) PublishAsync(event interface{}, topic string) {
-	data, err := json.Marshal(&event)
-	if err != nil {
-		log.Printf("error when marshal event %v", err)
-	}
-	if msgId, err := eventBus.Conn.PublishAsync(topic, data, func(str string, err error) {
-		log.Println("what ", str)
-	}); err != nil {
-		log.Printf("error when publish event %v", err)
-	} else {
-		log.Printf("Delivery message [%s] success to topic [%s]", msgId, topic)
-	}
-}
-
 func (eventBus *EventBus) Publish(event interface{}, topic string) {
 	data, err := json.Marshal(&event)
 	if err != nil {
@@ -61,6 +47,7 @@ func (eventBus *EventBus) Publish(event interface{}, topic string) {
 	log.Printf("Delivery message success to topic [%s]", topic)
 }
 
+// QueueSubscribe
 func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []interface{}, topic, queue string) {
 	if _, ok := eventBus.Subscriptions[reflect.TypeOf(event)]; !ok {
 		eventBus.Subscriptions[reflect.TypeOf(event)] = eventHandlers
@@ -70,12 +57,8 @@ func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []inte
 
 	go eventBus.Rb.Run(func(result *ResultError, rawMsg *stan.Msg) {
 		if result.Err != nil {
-			if rawMsg.RedeliveryCount >= 5 {
-				// store seq to start
-			}
-		} else {
-			rawMsg.Ack()
-			log.Printf("after invoke: %v", result.Res)
+			log.Println(result.Err)
+			// should publish to retry topic
 		}
 	})
 
@@ -85,7 +68,8 @@ func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []inte
 				item := handler
 				concrete := reflect.ValueOf(item)
 				go func() {
-					log.Printf("[Queue] Handle event seg [%s] redeliveryCount [%d] from topic [%s] with handler [%v]", strconv.Itoa(int(msg.Sequence)), msg.RedeliveryCount, topic, reflect.TypeOf(item).String())
+					log.Printf("[Queue] Handle event seg [%s] redeliveryCount [%d] from topic [%s] with handler [%v]", strconv.Itoa(int(msg.Sequence)),
+						msg.RedeliveryCount, topic, reflect.TypeOf(item).String())
 					concrete.MethodByName("Handle").Call([]reflect.Value{reflect.ValueOf(msg), reflect.ValueOf(eventBus.Rb.InChan)})
 				}()
 			}
@@ -95,38 +79,3 @@ func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []inte
 		}
 	}()
 }
-
-// func (eventBus *EventBus) Subscribe(event interface{}, eventHandlers []interface{}, topic string) {
-// 	if _, ok := eventBus.Subscriptions[reflect.TypeOf(event)]; !ok {
-// 		eventBus.Subscriptions[reflect.TypeOf(event)] = eventHandlers
-// 	} else {
-// 		eventBus.Subscriptions[reflect.TypeOf(event)] = append(eventBus.Subscriptions[reflect.TypeOf(event)], eventHandlers...)
-// 	}
-// 	resErrors := make(chan ResultError, len(eventBus.Subscriptions[reflect.TypeOf(event)]))
-// 	resultError := make(chan ResultError)
-// 	eventBus.Rb.New(resultError, resErrors)
-// 	go eventBus.Rb.Run()
-
-// 	go func() {
-// 		_, err := eventBus.Conn.Subscribe(topic, func(msg *stan.Msg) {
-
-// 			for _, handler := range eventBus.Subscriptions[reflect.TypeOf(event)] {
-// 				item := handler
-// 				concrete := reflect.ValueOf(item)
-// 				go func() {
-// 					log.Printf("Handle event seg [%s] from topic [%s] with handler [%v]", strconv.Itoa(int(msg.Sequence)), topic, reflect.TypeOf(item).String())
-// 					concrete.MethodByName("Handle").Call([]reflect.Value{reflect.ValueOf(msg.Data), reflect.ValueOf(resultError)})
-// 				}()
-// 			}
-
-// 			for item := range resErrors {
-// 				if item.Err != nil {
-// 					log.Printf("Error when handle topic [%s]. Error --> %v", topic, item.Err)
-// 				}
-// 			}
-// 		})
-// 		if err != nil {
-// 			log.Printf("error when subscribe topic [%s]. Error --> %v", topic, err)
-// 		}
-// 	}()
-// }

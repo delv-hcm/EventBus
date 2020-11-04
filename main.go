@@ -15,17 +15,12 @@ func main() {
 
 	eventBus := (&EventBus.EventBus{ClientId: "server-01"}).New(100)
 
-	// eventBus.Subscribe(&EventHandlers.RegisterEvent{}, []interface{}{
-	// 	&EventHandlers.RegisterEventHandler{},
-	// 	&EventHandlers.RegisterEvent2Handler{}}, "register-event-5",
-	// )
-
 	eventBus.QueueSubscribe(&EventHandlers.RegisterEvent{}, []interface{}{
 		&EventHandlers.RegisterEventHandler{},
 		&EventHandlers.RegisterEvent2Handler{}}, "register-event-5", "queue-name",
 	)
 
-	//eventBus.Subscribe(&EventHandlers.LeaveClassEvent{}, []interface{}{&EventHandlers.LeaveClassEventHandler{}}, "leave-class-event")
+	eventBus.QueueSubscribe(&EventHandlers.LeaveClassEvent{}, []interface{}{&EventHandlers.LeaveClassEventHandler{}}, "leave-class-event", "queue-name-01")
 
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {

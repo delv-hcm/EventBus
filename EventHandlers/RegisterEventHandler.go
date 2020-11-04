@@ -32,8 +32,10 @@ func (handler *RegisterEventHandler) Handle(msg *stan.Msg, errorResult chan<- Ev
 		errorResult <- EventBus.ResultError{Res: nil, Err: errors.New("Unexpected error"), Seq: msg.Sequence, Msg: msg}
 		return
 	}
+	// handle business logic
 	time.Sleep(time.Duration(rand.Intn(100)*1) * time.Microsecond)
 	log.Printf("NumGoroutine [%d] Invoke [RegisterEventHandler], classId: %s", runtime.NumGoroutine(), evt.ClassID)
+	// return
 	errorResult <- EventBus.ResultError{Res: fmt.Sprintf("done RegisterEventHandler: %s", evt.ClassID), Err: nil}
 }
 
@@ -46,7 +48,9 @@ func (handler *RegisterEvent2Handler) Handle(msg *stan.Msg, errorResult chan<- E
 	if err != nil {
 		errorResult <- EventBus.ResultError{Res: nil, Err: err}
 	}
+	// handle business logic
 	time.Sleep(time.Duration(rand.Intn(500)*1) * time.Microsecond)
 	log.Printf("NumGoroutine [%d] Invoke [RegisterEventHandler2], classId: %s", runtime.NumGoroutine(), evt.ClassID)
+	// return
 	errorResult <- EventBus.ResultError{Res: fmt.Sprintf("done RegisterEventHandler2: %s", evt.ClassID), Err: nil}
 }
