@@ -11,7 +11,7 @@ import (
 )
 
 type LeaveClassEvent struct {
-	Event   *EventBus.Event
+	Event   *EventBus.IntegrationEvent
 	ClassID string
 	IsLeave bool
 }
