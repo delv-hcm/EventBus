@@ -20,8 +20,18 @@ func main() {
 			EventHandler:    &EventHandlers.RegisterEventHandler{},
 			FallbackHandler: &EventHandlers.RegisterEventHandler{},
 		},
-	}, "register-event-100", "queue-name",
-	)
+		{
+			EventHandler:    &EventHandlers.RegisterEvent2Handler{},
+			FallbackHandler: &EventHandlers.RegisterEvent2Handler{},
+		},
+	}, "register-event-100", "01")
+
+	eventBus.QueueSubscribe(&EventHandlers.ClassEvent{}, []EventBus.Handler{
+		{
+			EventHandler:    &EventHandlers.ClassEventHandler{},
+			FallbackHandler: &EventHandlers.ClassEventHandler{},
+		},
+	}, "class_event", "02")
 
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {

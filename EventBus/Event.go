@@ -9,6 +9,7 @@ type IntegrationEvent struct {
 	Payload         []byte
 	Delay           int
 	RedeliveryCount int
+	OriginSub       string
 	Sub             string
 	IsRetry         bool
 	Type            string

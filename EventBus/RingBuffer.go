@@ -1,6 +1,8 @@
 package EventBus
 
-import "github.com/nats-io/stan.go"
+import (
+	"github.com/nats-io/stan.go"
+)
 
 type RingBuffer struct {
 	InChan  chan ResultError
