@@ -37,7 +37,7 @@ func (handler *ClassEventHandler) Handle(msg *stan.Msg, errorResult chan<- Event
 		return
 	}
 	time.Sleep(time.Duration(rand.Intn(500)*10000) * time.Microsecond)
-	log.Printf("NumGoroutine [%d] Invoke [ClassEventHandler], classId: %s", runtime.NumGoroutine(), data.ClassID)
+	log.Printf("NumGoroutine [%d] Invoke [ClassEventHandler], classId: %s, eventId: %s", runtime.NumGoroutine(), data.ClassID, evt.ID)
 
 	errorResult <- EventBus.ResultError{Res: fmt.Sprintf("done ClassEventHandler: %s", data.ClassID), Err: nil}
 }

@@ -13,6 +13,7 @@ type IntegrationEvent struct {
 	Sub             string
 	IsRetry         bool
 	Type            string
+	HandleBy        string
 }
 
 func (e *IntegrationEvent) New() *IntegrationEvent {

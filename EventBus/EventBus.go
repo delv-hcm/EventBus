@@ -11,6 +11,18 @@ import (
 	"github.com/nats-io/stan.go"
 )
 
+const (
+	cBlack = "\u001b[90m"
+	cRed   = "\u001b[91m"
+	cCyan  = "\u001b[96m"
+	// cGreen = "\u001b[92m"
+	cYellow = "\u001b[93m"
+	cBlue   = "\u001b[94m"
+	// cMagenta = "\u001b[95m"
+	// cWhite   = "\u001b[97m"
+	cReset = "\u001b[0m"
+)
+
 type IEventBus interface {
 	Publish(event IntegrationEvent, topic string)
 	Subscribe(event IntegrationEvent, eventHandlers []*IntegrationEventHandler, topic string)
@@ -30,9 +42,10 @@ type EventBus struct {
 	Rw             sync.Mutex
 }
 type ResultError struct {
-	Res interface{}
-	Err error
-	Msg *stan.Msg
+	Res         interface{}
+	Err         error
+	Msg         *stan.Msg
+	HandlerType string
 }
 
 func (eventBus *EventBus) Run() {
@@ -44,6 +57,8 @@ func (eventBus *EventBus) Run() {
 			if err := json.Unmarshal(rawMsg.Data, &event); err != nil {
 				log.Fatalln(err)
 			}
+
+			event.HandleBy = result.HandlerType
 
 			if event.RedeliveryCount == 0 {
 				evt := eventBus.cloneEvent(event, event.OriginSub, 5)
@@ -117,7 +132,7 @@ func (eventBus *EventBus) publish(evt IntegrationEvent) {
 	if err := eventBus.Conn.Publish(evt.Sub, data); err != nil {
 		log.Printf("error when publish event Id [%s] %v", evt.ID, err)
 	}
-	log.Printf("Delivery event Id [%s] success to topic [%s]", evt.ID, evt.Sub)
+	log.Printf("Delivery event Id [%s] success to topic [%s%s%s]", evt.ID, cCyan, evt.Sub, cReset)
 }
 
 func (eventBus *EventBus) prepareRetryTopic(topic string) []string {
@@ -145,13 +160,11 @@ func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []Hand
 				for _, handler := range eventBus.Subscriptions[data.Type] {
 					eventHandler := handler.EventHandler
 					concrete := reflect.ValueOf(eventHandler)
-					log.Printf("[Queue] Handle event Id [%s] redelivery [%d] from topic [%s] with EventHandler [%v]", data.ID,
-						data.RedeliveryCount, topic, reflect.TypeOf(eventHandler).String())
-					if !data.IsRetry {
-						go func() {
-							concrete.MethodByName("Handle").Call([]reflect.Value{reflect.ValueOf(msg), reflect.ValueOf(eventBus.Rb.InChan)})
-						}()
-					}
+					log.Printf("%s[Queue]%s Handle event Id [%s] redelivery [%d] from topic [%s%s%s] with EventHandler [%s%v%s]", cBlue, cReset, data.ID,
+						data.RedeliveryCount, cCyan, topic, cReset, cCyan, reflect.TypeOf(eventHandler).String(), cReset)
+					go func() {
+						concrete.MethodByName("Handle").Call([]reflect.Value{reflect.ValueOf(msg), reflect.ValueOf(eventBus.Rb.InChan)})
+					}()
 				}
 			}
 		}, stan.DurableName(queue))
@@ -169,10 +182,13 @@ func (eventBus *EventBus) QueueSubscribe(event interface{}, eventHandlers []Hand
 					log.Printf("Error when Unmarshal event: %v", err)
 				} else {
 					for _, handler := range eventBus.Subscriptions[data.Type] {
-						item := handler.FallbackHandler
-						concrete := reflect.ValueOf(item)
-						log.Printf("[Queue] Handle event Id [%s] topic [%s] redelivery [%d] from topic [%s] with FallbackHandler [%v]", data.ID,
-							data.Sub, data.RedeliveryCount, topic, reflect.TypeOf(item).String())
+						item := handler
+						if reflect.TypeOf(handler.EventHandler).String() != data.HandleBy {
+							continue
+						}
+						concrete := reflect.ValueOf(item.FallbackHandler)
+						log.Printf("%s[Queue]%s Handle event Id [%s] redelivery [%d] from topic [%s%s%s] with FallbackHandler [%s%v%s]", cBlue, cReset, data.ID,
+							data.RedeliveryCount, cCyan, topic, cReset, cCyan, reflect.TypeOf(item).String(), cReset)
 
 						go func() {
 							if data.IsRetry {
