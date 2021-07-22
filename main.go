@@ -13,19 +13,25 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
-	eventBus := (&EventBus.EventBus{ClientId: "server-01"}).New(100)
+	eventBus := (&EventBus.EventBus{ClientId: "server-01"}).New()
 
-	// eventBus.Subscribe(&EventHandlers.RegisterEvent{}, []interface{}{
-	// 	&EventHandlers.RegisterEventHandler{},
-	// 	&EventHandlers.RegisterEvent2Handler{}}, "register-event-5",
-	// )
+	eventBus.QueueSubscribe(&EventHandlers.RegisterEvent{}, []EventBus.Handler{
+		{
+			EventHandler:    &EventHandlers.RegisterEventHandler{},
+			FallbackHandler: &EventHandlers.RegisterEventHandler{},
+		},
+		{
+			EventHandler:    &EventHandlers.RegisterEvent2Handler{},
+			FallbackHandler: &EventHandlers.RegisterEvent2Handler{},
+		},
+	}, "register-event-100", "01")
 
-	eventBus.QueueSubscribe(&EventHandlers.RegisterEvent{}, []interface{}{
-		&EventHandlers.RegisterEventHandler{},
-		&EventHandlers.RegisterEvent2Handler{}}, "register-event-5", "queue-name",
-	)
-
-	//eventBus.Subscribe(&EventHandlers.LeaveClassEvent{}, []interface{}{&EventHandlers.LeaveClassEventHandler{}}, "leave-class-event")
+	eventBus.QueueSubscribe(&EventHandlers.ClassEvent{}, []EventBus.Handler{
+		{
+			EventHandler:    &EventHandlers.ClassEventHandler{},
+			FallbackHandler: &EventHandlers.ClassEventHandler{},
+		},
+	}, "class_event", "02")
 
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {

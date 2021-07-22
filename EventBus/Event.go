@@ -1,9 +1,24 @@
 package EventBus
 
-type Event struct {
-	ID      string
-	Payload interface{}
+import (
+	"github.com/segmentio/ksuid"
+)
+
+type IntegrationEvent struct {
+	ID              string
+	Payload         []byte
+	Delay           int
+	RedeliveryCount int
+	OriginSub       string
+	Sub             string
+	IsRetry         bool
+	Type            string
+	HandleBy        string
 }
 
-type EventHandler struct {
+func (e *IntegrationEvent) New() *IntegrationEvent {
+	return &IntegrationEvent{ID: ksuid.New().String(), IsRetry: false, RedeliveryCount: 0, Delay: 0}
+}
+
+type IntegrationEventHandler struct {
 }
